@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Kayıt Ol — Hangisi?{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-card">
+        <header class="form-header">
+            <h1 class="form-title">Kayıt Ol</h1>
+            <p class="form-subtitle">Hesap oluşturarak anket açabilir ve topluluğa danışabilirsiniz.</p>
+        </header>
+
+        <form method="post" novalidate id="register-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    <span>Kullanıcı Adı</span>
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <span class="form-error">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}" class="form-label">
+                    <span>E-posta Adresi</span>
+                    <span class="form-help">Profilinde gizli tutulacaktır</span>
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <span class="form-error">{{ form.email.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                    <span>Parola</span>
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <span class="form-error">{{ form.password1.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                    <span>Parola Tekrar</span>
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <span class="form-error">{{ form.password2.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error" style="margin-top: 10px;">
+                    <span>{{ form.non_field_errors.0 }}</span>
+                </div>
+            {% endif %}
+
+            <div style="margin-top: 28px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;" id="btn-submit-register">
+                    Hesap Oluştur
+                </button>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--text-muted);">
+            Zaten hesabın var mı? 
+            <a href="{% url 'users:login' %}" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                Giriş Yap
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

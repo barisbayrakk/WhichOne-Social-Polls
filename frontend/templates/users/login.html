@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Giriş Yap — Hangisi?{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-card">
+        <header class="form-header">
+            <h1 class="form-title">Giriş Yap</h1>
+            <p class="form-subtitle">Anket oluşturmak ve oylarınızı yönetmek için giriş yapın.</p>
+        </header>
+
+        <form method="post" novalidate id="login-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    <span>Kullanıcı Adı veya E-posta</span>
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <span class="form-error">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">
+                    <span>Parola</span>
+                </label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <span class="form-error">{{ form.password.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error" style="margin-top: 10px;">
+                    <span>{{ form.non_field_errors.0 }}</span>
+                </div>
+            {% endif %}
+
+            <div style="margin-top: 28px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;" id="btn-submit-login">
+                    Giriş Yap
+                </button>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 0.9rem; color: var(--text-muted);">
+            Henüz bir hesabın yok mu? 
+            <a href="{% url 'users:register' %}" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                Hemen Kayıt Ol
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

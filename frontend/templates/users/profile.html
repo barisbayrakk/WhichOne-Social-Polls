@@ -1,0 +1,788 @@
+{% extends 'base.html' %}
+
+{% block title %}Profilim (@{{ user.username }}) — Hangisi?{% endblock %}
+{% block meta_description %}Hangisi platformunda oluşturduğunuz anketleri yönetin, oy dağılımlarını ve istatistikleri takip edin.{% endblock %}
+
+{% block extra_head %}
+<style>
+.profile-container {
+    padding-top: 28px;
+    padding-bottom: 72px;
+}
+
+.profile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 32px;
+    position: relative;
+    transition: border-color var(--transition-fast);
+}
+
+.profile-banner-accent {
+    height: 90px;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.4) 0%, rgba(255, 101, 132, 0.3) 50%, rgba(32, 201, 151, 0.25) 100%);
+    position: relative;
+}
+
+.profile-content {
+    padding: 0 32px 32px 32px;
+    position: relative;
+}
+
+.profile-header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: -45px;
+    margin-bottom: 24px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.profile-avatar-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+}
+
+.profile-avatar-large {
+    width: 88px;
+    height: 88px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-orange) 100%);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 800;
+    box-shadow: 0 8px 24px var(--primary-glow);
+    border: 4px solid var(--bg-card);
+    flex-shrink: 0;
+}
+
+.profile-names {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-username-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.profile-handle {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+}
+
+.profile-private-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(108, 99, 255, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(108, 99, 255, 0.25);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+[data-theme="dark"] .profile-private-pill {
+    background: rgba(108, 99, 255, 0.18);
+    color: #A59EFE;
+    border-color: rgba(108, 99, 255, 0.35);
+}
+
+.profile-details-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.profile-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.profile-stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.profile-stat-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all var(--transition-fast);
+}
+
+.profile-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-focus);
+}
+
+[data-theme="dark"] .profile-stat-card {
+    background: #151821;
+    border-color: #262B37;
+}
+
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon-primary {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .stat-icon-primary {
+    background: rgba(108, 99, 255, 0.18);
+    color: #A59EFE;
+}
+
+.stat-icon-success {
+    background: rgba(32, 201, 151, 0.12);
+    color: var(--accent-green);
+}
+
+[data-theme="dark"] .stat-icon-success {
+    background: rgba(32, 201, 151, 0.2);
+    color: #20C997;
+}
+
+.stat-icon-orange {
+    background: rgba(255, 101, 132, 0.12);
+    color: var(--accent-orange);
+}
+
+[data-theme="dark"] .stat-icon-orange {
+    background: rgba(255, 101, 132, 0.2);
+    color: #FF6584;
+}
+
+.stat-icon-bookmark {
+    background: rgba(108, 99, 255, 0.14);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .stat-icon-bookmark {
+    background: rgba(108, 99, 255, 0.25);
+    color: #A59EFE;
+}
+
+.stat-data {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.stat-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.profile-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.profile-filter-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 5px;
+    border-radius: var(--radius-full);
+}
+
+.filter-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-tab-btn:hover {
+    color: var(--text-main);
+}
+
+.filter-tab-btn.active {
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.tab-badge {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.filter-tab-btn.active .tab-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+[data-theme="dark"] .tab-badge {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.poll-author-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-pill-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-pill-action:hover {
+    background: var(--bg-card);
+    border-color: var(--border-focus);
+    transform: translateY(-1px);
+}
+
+.btn-pill-danger {
+    color: #FA5252;
+    border-color: rgba(250, 82, 82, 0.3);
+    background: rgba(250, 82, 82, 0.06);
+}
+
+.btn-pill-danger:hover {
+    background: #FA5252;
+    color: #FFFFFF;
+    border-color: #FA5252;
+}
+
+[data-theme="dark"] .btn-pill-action {
+    background: #181B22;
+    border-color: #2E3442;
+}
+
+[data-theme="dark"] .btn-pill-action:hover {
+    background: #222631;
+    border-color: #4B5563;
+}
+
+.poll-item-empty {
+    background: var(--bg-card);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 56px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.empty-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+[data-theme="dark"] .empty-icon-circle {
+    background: rgba(108, 99, 255, 0.16);
+    color: #A59EFE;
+}
+
+@media (max-width: 768px) {
+    .profile-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-top: -35px;
+    }
+    
+    .profile-avatar-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .profile-avatar-large {
+        width: 72px;
+        height: 72px;
+        font-size: 1.8rem;
+    }
+
+    .profile-stats-container {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-content {
+        padding: 0 20px 24px 20px;
+    }
+
+    .profile-nav-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-filter-tabs {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container profile-container">
+
+    <div class="profile-card">
+        <div class="profile-banner-accent"></div>
+        <div class="profile-content">
+            <div class="profile-header-row">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar-large">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="profile-names">
+                        <div class="profile-username-line">
+                            <h1 class="profile-handle">@{{ user.username }}</h1>
+                            <span class="profile-private-pill">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Gizli Profil
+                            </span>
+                        </div>
+                        <div class="profile-details-strip">
+                            <span class="profile-meta-item">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                {{ user.email }}
+                            </span>
+                            <span class="profile-meta-item">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                {{ user.date_joined|date:"d M Y" }} tarihinde katıldı
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="{% url 'polls:poll_create' %}" class="btn btn-primary" id="btn-profile-new-poll">
+                        <span>+</span> Yeni Anket Başlat
+                    </a>
+                </div>
+            </div>
+
+            <div class="profile-stats-container">
+                <div class="profile-stat-card">
+                    <div class="stat-icon-wrapper stat-icon-primary">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <div class="stat-data">
+                        <span class="stat-value">{{ total_polls }}</span>
+                        <span class="stat-title">Toplam Anket</span>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <div class="stat-icon-wrapper stat-icon-success">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="stat-data">
+                        <span class="stat-value">{{ active_polls_count }}</span>
+                        <span class="stat-title">Aktif Oylama</span>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <div class="stat-icon-wrapper stat-icon-orange">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                    </div>
+                    <div class="stat-data">
+                        <span class="stat-value">{{ total_votes_received }}</span>
+                        <span class="stat-title">Alınan Toplam Oy</span>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <div class="stat-icon-wrapper stat-icon-bookmark">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div class="stat-data">
+                        <span class="stat-value">{{ total_bookmarks }}</span>
+                        <span class="stat-title">Kaydedilen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-nav-bar">
+        <div class="profile-filter-tabs" role="tablist">
+            <button type="button" class="filter-tab-btn active" data-filter="all" id="tab-filter-all">
+                Tümü <span class="tab-badge">{{ total_polls }}</span>
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="active" id="tab-filter-active">
+                Aktif <span class="tab-badge">{{ active_polls_count }}</span>
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="closed" id="tab-filter-closed">
+                Kapanan <span class="tab-badge">{{ closed_polls_count }}</span>
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="bookmarked" id="tab-filter-bookmarked">
+                Kaydettiklerim <span class="tab-badge">{{ total_bookmarks }}</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="poll-feed" id="user-polls-feed">
+        {% for poll in polls %}
+            <article class="poll-card show-results {% if not poll.is_open %}is-closed{% endif %}" 
+                     data-poll-id="{{ poll.id }}" 
+                     data-category="created"
+                     data-status="{% if poll.is_open %}active{% else %}closed{% endif %}"
+                     id="poll-card-{{ poll.id }}">
+                
+                <header class="poll-header">
+                    <div class="poll-author-info">
+                        <div class="poll-avatar">{{ poll.author.username|slice:":1"|upper }}</div>
+                        <div>
+                            <div class="poll-author-name">@{{ poll.author.username }}</div>
+                            <div class="poll-date">{{ poll.created_at|date:"d M Y, H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {% if poll.is_open %}
+                            <span class="poll-status-tag poll-status-active" {% if poll.expires_at %}data-expires-at="{{ poll.expires_at|date:'c' }}"{% endif %}>
+                                {% if poll.remaining_time_display %}{{ poll.remaining_time_display }}{% else %}Aktif{% endif %}
+                            </span>
+                        {% else %}
+                            <span class="poll-status-tag poll-status-closed">Oylama Kapandı</span>
+                        {% endif %}
+
+                        <form action="{% url 'polls:poll_toggle_active' poll.id %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'users:profile' %}">
+                            <button type="submit" class="btn-pill-action" title="{% if poll.is_active %}Oylamayı Kapat{% else %}Oylamayı Yeniden Aç{% endif %}">
+                                {% if poll.is_active %}
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                    Kapat
+                                {% else %}
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    Yeniden Aç
+                                {% endif %}
+                            </button>
+                        </form>
+
+                        <form action="{% url 'polls:poll_delete' poll.id %}" method="post" style="display:inline;" onsubmit="return confirm('Bu anketi tamamen silmek istediğinize emin misiniz?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'users:profile' %}">
+                            <button type="submit" class="btn-pill-action btn-pill-danger" title="Anketi Sil">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                Sil
+                            </button>
+                        </form>
+                    </div>
+                </header>
+
+                <h2 class="poll-question">
+                    <a href="{% url 'polls:poll_detail' poll.id %}">{{ poll.question }}</a>
+                </h2>
+
+                <div class="poll-choices">
+                    {% for choice in poll.choices.all %}
+                        <div class="choice-item {% if not poll.is_open and choice.id in poll.winning_choice_ids %}is-winner{% endif %}" 
+                             data-choice-id="{{ choice.id }}"
+                             data-votes="{{ choice.votes }}">
+                            <div class="choice-progress-bg" style="width: {{ choice.css_percentage }}%;"></div>
+                            <div class="choice-content">
+                                <div class="choice-radio-indicator"></div>
+                                <span class="choice-text">{{ choice.text }}</span>
+                                {% if not poll.is_open and choice.id in poll.winning_choice_ids %}
+                                    <span class="choice-winner-tag">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+                                        Kazanan
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="choice-stats">
+                                <span class="choice-percentage">%{{ choice.percentage }}</span>
+                                <span class="choice-votes-count">({{ choice.votes }} oy)</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <footer class="poll-footer">
+                    <div class="poll-meta-left">
+                        <div class="poll-total-votes">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                            <span class="poll-total-votes-count">{{ poll.total_votes }} oy</span>
+                        </div>
+                        <a href="{% url 'polls:poll_detail' poll.id %}" class="btn-ghost btn-sm" style="font-size:0.82rem; text-decoration:none;">
+                            Detay &rarr;
+                        </a>
+                    </div>
+
+                    <div class="poll-actions">
+                        <button type="button" 
+                                class="btn-icon btn-share" 
+                                data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'polls:poll_detail' poll.id %}"
+                                title="Bağlantıyı Kopyala"
+                                aria-label="Bağlantıyı Kopyala">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        </button>
+                    </div>
+                </footer>
+            </article>
+        {% empty %}
+            <div class="poll-item-empty" data-category="created">
+                <div class="empty-icon-circle">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </div>
+                <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px;">Henüz bir anket oluşturmadınız</h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem; max-width: 420px;">Kararsız kaldığınız bir konuyu hemen topluluğa sorarak dakikalar içinde fikir toplayın.</p>
+                <a href="{% url 'polls:poll_create' %}" class="btn btn-primary" id="btn-profile-empty-create">Hemen Anket Oluştur</a>
+            </div>
+        {% endfor %}
+
+        {% for bpoll in bookmarked_polls %}
+            <article class="poll-card {% if bpoll.has_user_voted %}has-voted{% endif %} {% if not bpoll.is_open %}is-closed{% endif %} {% if bpoll.has_user_voted or not bpoll.is_open %}show-results{% endif %}" 
+                     data-poll-id="{{ bpoll.id }}" 
+                     data-category="bookmarked"
+                     data-status="{% if bpoll.is_open %}active{% else %}closed{% endif %}"
+                     id="poll-card-bm-{{ bpoll.id }}"
+                     style="display: none;">
+                
+                <header class="poll-header">
+                    <div class="poll-author-info">
+                        <div class="poll-avatar">{{ bpoll.author.username|slice:":1"|upper }}</div>
+                        <div>
+                            <div class="poll-author-name">@{{ bpoll.author.username }}</div>
+                            <div class="poll-date">{{ bpoll.created_at|date:"d M Y, H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        {% if bpoll.is_open %}
+                            <span class="poll-status-tag poll-status-active" {% if bpoll.expires_at %}data-expires-at="{{ bpoll.expires_at|date:'c' }}"{% endif %}>
+                                {% if bpoll.remaining_time_display %}{{ bpoll.remaining_time_display }}{% else %}Aktif{% endif %}
+                            </span>
+                        {% else %}
+                            <span class="poll-status-tag poll-status-closed">Oylama Kapandı</span>
+                        {% endif %}
+                    </div>
+                </header>
+
+                <h2 class="poll-question">
+                    <a href="{% url 'polls:poll_detail' bpoll.id %}">{{ bpoll.question }}</a>
+                </h2>
+
+                <div class="poll-choices">
+                    {% for choice in bpoll.choices.all %}
+                        <div class="choice-item {% if bpoll.user_choice_id == choice.id %}selected{% endif %} {% if not bpoll.is_open and choice.id in bpoll.winning_choice_ids %}is-winner{% endif %}" 
+                             data-choice-id="{{ choice.id }}"
+                             data-votes="{{ choice.votes }}">
+                            <div class="choice-progress-bg" style="width: {{ choice.css_percentage }}%;"></div>
+                            <div class="choice-content">
+                                <div class="choice-radio-indicator"></div>
+                                <span class="choice-text">{{ choice.text }}</span>
+                                {% if not bpoll.is_open and choice.id in bpoll.winning_choice_ids %}
+                                    <span class="choice-winner-tag">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+                                        Kazanan
+                                    </span>
+                                {% endif %}
+                                <span class="choice-selected-tag">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Senin Oyun
+                                </span>
+                            </div>
+                            <div class="choice-stats">
+                                <span class="choice-percentage">%{{ choice.percentage }}</span>
+                                <span class="choice-votes-count">({{ choice.votes }} oy)</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <footer class="poll-footer">
+                    <div class="poll-meta-left">
+                        <div class="poll-total-votes">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                            <span class="poll-total-votes-count">{{ bpoll.total_votes }} oy</span>
+                        </div>
+                        <a href="{% url 'polls:poll_detail' bpoll.id %}" class="btn-ghost btn-sm" style="font-size:0.82rem; text-decoration:none;">
+                            Detay &rarr;
+                        </a>
+                    </div>
+
+                    <div class="poll-actions">
+                        <button type="button" 
+                                class="btn-icon btn-bookmark active" 
+                                data-poll-id="{{ bpoll.id }}"
+                                title="Kaydedilenlerden Çıkar"
+                                aria-label="Kaydedilenlerden Çıkar">
+                            <svg class="bookmark-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" 
+                                class="btn-icon btn-share" 
+                                data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'polls:poll_detail' bpoll.id %}"
+                                title="Bağlantıyı Kopyala"
+                                aria-label="Bağlantıyı Kopyala">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        </button>
+                    </div>
+                </footer>
+            </article>
+        {% endfor %}
+
+        <div id="filter-empty-state" class="poll-item-empty" style="display: none;">
+            <div class="empty-icon-circle">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 8px;" id="filter-empty-title">Bu filtrede anket bulunamadı</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;" id="filter-empty-text">Seçili kritere uyan anketiniz bulunmuyor.</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const filterButtons = document.querySelectorAll('.filter-tab-btn');
+    const pollCards = document.querySelectorAll('#user-polls-feed .poll-card');
+    const filterEmptyState = document.getElementById('filter-empty-state');
+    const filterEmptyTitle = document.getElementById('filter-empty-title');
+    const filterEmptyText = document.getElementById('filter-empty-text');
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filter = btn.getAttribute('data-filter');
+            let visibleCount = 0;
+
+            pollCards.forEach(card => {
+                const category = card.getAttribute('data-category');
+                const status = card.getAttribute('data-status');
+
+                let match = false;
+                if (filter === 'all') {
+                    match = (category === 'created');
+                } else if (filter === 'active') {
+                    match = (category === 'created' && status === 'active');
+                } else if (filter === 'closed') {
+                    match = (category === 'created' && status === 'closed');
+                } else if (filter === 'bookmarked') {
+                    match = (category === 'bookmarked');
+                }
+
+                if (match) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (filterEmptyState) {
+                if (visibleCount === 0) {
+                    filterEmptyState.style.display = 'flex';
+                    if (filter === 'bookmarked') {
+                        filterEmptyTitle.textContent = 'Henüz kaydedilen bir anketiniz yok';
+                        filterEmptyText.textContent = 'İlgilendiğiniz veya sonucunu beklediğiniz anketleri kaydet butonuna basarak buraya ekleyebilirsiniz.';
+                    } else {
+                        filterEmptyTitle.textContent = 'Bu filtrede anket bulunamadı';
+                        filterEmptyText.textContent = 'Seçili kritere uyan anketiniz bulunmuyor.';
+                    }
+                } else {
+                    filterEmptyState.style.display = 'none';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

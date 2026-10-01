@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ poll.question }} — Hangisi?{% endblock %}
+{% block meta_description %}{{ poll.question }} - Sen de fikrini belirt, oyunu kullan!{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 36px; padding-bottom: 60px;">
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'polls:feed' %}" class="btn btn-secondary btn-sm">
+            ← Tüm Anketlere Dön
+        </a>
+    </div>
+
+    <article class="poll-card {% if user_choice_id %}has-voted{% endif %} {% if not poll.is_open %}is-closed{% endif %} {% if user_choice_id or user.is_authenticated and user == poll.author or not poll.is_open %}show-results{% endif %}" 
+             data-poll-id="{{ poll.id }}" 
+             id="poll-card-detail-{{ poll.id }}">
+        
+        <header class="poll-header">
+            <div class="poll-author-info">
+                <div class="poll-avatar" style="width: 44px; height: 44px; font-size: 1.1rem;">
+                    {{ poll.author.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div class="poll-author-name" style="font-size: 1.05rem;">@{{ poll.author.username }}</div>
+                    <div class="poll-date">{{ poll.created_at|date:"d M Y, H:i" }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {% if poll.is_open %}
+                    <span class="poll-status-tag poll-status-active" {% if poll.expires_at %}data-expires-at="{{ poll.expires_at|date:'c' }}"{% endif %}>
+                        {% if poll.remaining_time_display %}{{ poll.remaining_time_display }}{% else %}Aktif{% endif %}
+                    </span>
+                {% else %}
+                    <span class="poll-status-tag poll-status-closed">Oylama Kapandı</span>
+                {% endif %}
+
+                {% if user.is_authenticated and user == poll.author %}
+                    <form action="{% url 'polls:poll_toggle_active' poll.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">
+                            {% if poll.is_active %}Kapat{% else %}Yeniden Aç{% endif %}
+                        </button>
+                    </form>
+                    <form action="{% url 'polls:poll_delete' poll.id %}" method="post" style="display:inline;" onsubmit="return confirm('Bu anketi tamamen silmek istediğine emin misin?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">
+                            Sil
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </header>
+
+        <h1 class="poll-question" style="font-size: 1.75rem; margin-bottom: 24px;">
+            {{ poll.question }}
+        </h1>
+
+        <div class="poll-choices">
+            {% for choice in poll.choices.all %}
+                <div class="choice-item {% if user_choice_id == choice.id %}selected{% endif %} {% if not poll.is_open and choice.id in poll.winning_choice_ids %}is-winner{% endif %}" 
+                     data-choice-id="{{ choice.id }}"
+                     data-votes="{{ choice.votes }}">
+                    <div class="choice-progress-bg" style="width: {{ choice.css_percentage }}%;"></div>
+                    <div class="choice-content">
+                        <div class="choice-radio-indicator"></div>
+                        <span class="choice-text" style="font-size: 1.05rem;">{{ choice.text }}</span>
+                        {% if not poll.is_open and choice.id in poll.winning_choice_ids %}
+                            <span class="choice-winner-tag">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+                                Kazanan
+                            </span>
+                        {% endif %}
+                        <span class="choice-selected-tag">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Senin Oyun
+                        </span>
+                    </div>
+                    <div class="choice-stats">
+                        <span class="choice-percentage">%{{ choice.percentage }}</span>
+                        <span class="choice-votes-count">({{ choice.votes }} oy)</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <footer class="poll-footer" style="padding-top: 18px;">
+            <div class="poll-meta-left">
+                <div class="poll-total-votes" style="font-size: 0.95rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                    <span class="poll-total-votes-count">{{ poll.total_votes }} toplam oy</span>
+                </div>
+            </div>
+
+            <div class="poll-actions" style="display: flex; align-items: center; gap: 8px;">
+                {% if user.is_authenticated %}
+                    <button type="button" 
+                            class="btn-icon btn-bookmark {% if is_bookmarked %}active{% endif %}" 
+                            data-poll-id="{{ poll.id }}"
+                            title="{% if is_bookmarked %}Kaydedilenlerden Çıkar{% else %}Kaydet{% endif %}"
+                            aria-label="Kaydet">
+                        <svg class="bookmark-icon" width="16" height="16" viewBox="0 0 24 24" fill="{% if is_bookmarked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                {% else %}
+                    <a href="{% url 'users:login' %}?next={{ request.get_full_path }}" class="btn-icon" title="Kaydetmek için giriş yap" aria-label="Kaydet">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </a>
+                {% endif %}
+
+                <button type="button" 
+                        class="btn btn-secondary btn-sm btn-share" 
+                        data-url="{{ request.build_absolute_uri }}"
+                        id="btn-share-detail">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    <span>Bağlantıyı Kopyala</span>
+                </button>
+            </div>
+        </footer>
+    </article>
+</div>
+{% endblock %}
