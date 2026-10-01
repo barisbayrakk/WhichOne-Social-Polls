@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm
 from .models import CustomUser
@@ -30,6 +32,8 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('polls:feed')
 
+    redirect_to = request.POST.get('next') or request.GET.get('next', '')
+
     if request.method == 'POST':
         post_data = request.POST.copy()
         username_or_email = post_data.get('username', '').strip()
@@ -43,16 +47,22 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             messages.success(request, f"Tekrar hoş geldin, {user.username}!")
-            next_url = request.GET.get('next', 'polls:feed')
-            return redirect(next_url)
+            if redirect_to and url_has_allowed_host_and_scheme(
+                url=redirect_to,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure()
+            ):
+                return redirect(redirect_to)
+            return redirect('polls:feed')
         else:
             messages.error(request, "Geçersiz kullanıcı adı/e-posta veya parola.")
     else:
         form = LoginForm()
 
-    return render(request, 'users/login.html', {'form': form})
+    return render(request, 'users/login.html', {'form': form, 'next': redirect_to})
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     request.session.flush()

@@ -1,15 +1,26 @@
 import json
+from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.core.cache import cache
 from django.contrib import messages
-from datetime import timedelta
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
 from .models import Poll, Choice, Vote, Bookmark
 from .forms import PollCreateForm
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
 
 
 def feed_view(request):
@@ -83,19 +94,22 @@ def poll_create_view(request):
             messages.error(request, "Bir anket en az 2 seçenek içermelidir.")
         elif len(cleaned_choices) > 5:
             messages.error(request, "Bir anket en fazla 5 seçenek içerebilir.")
+        elif any(len(c) > 200 for c in cleaned_choices):
+            messages.error(request, "Seçeneklerin her biri en fazla 200 karakter olabilir.")
         elif form.is_valid():
-            poll = form.save(commit=False)
-            poll.author = request.user
-            duration_hours = form.cleaned_data.get('duration', 24)
-            poll.expires_at = timezone.now() + timedelta(hours=int(duration_hours))
-            poll.save()
+            with transaction.atomic():
+                poll = form.save(commit=False)
+                poll.author = request.user
+                duration_hours = form.cleaned_data.get('duration', 24)
+                poll.expires_at = timezone.now() + timedelta(hours=int(duration_hours))
+                poll.save()
 
-            for order, text in enumerate(cleaned_choices):
-                Choice.objects.create(
-                    poll=poll,
-                    text=text,
-                    order=order
-                )
+                for order, text in enumerate(cleaned_choices):
+                    Choice.objects.create(
+                        poll=poll,
+                        text=text,
+                        order=order
+                    )
 
             messages.success(request, "Anketiniz başarıyla oluşturuldu.")
             return redirect('polls:poll_detail', poll_id=poll.id)
@@ -134,22 +148,30 @@ def vote_api(request, poll_id):
     except Choice.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Geçersiz seçenek seçildi.'}, status=400)
 
-    if request.user.is_authenticated:
-        if Vote.objects.filter(poll=poll, user=request.user).exists():
-            return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
+    # Rate limit check (cooldown per IP / poll to prevent bot vote flooding)
+    client_ip = get_client_ip(request)
+    throttle_key = f'vote_throttle_{client_ip}_{poll.id}'
+    if cache.get(throttle_key):
+        return JsonResponse({'success': False, 'error': 'Lütfen tekrar oy vermeden önce kısa bir süre bekleyin.'}, status=429)
+    cache.set(throttle_key, True, timeout=2)
 
-        try:
-            Vote.objects.create(poll=poll, choice=choice, user=request.user)
-        except Exception:
-            return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
-    else:
-        session_key = f'voted_poll_{poll.id}'
-        if request.session.get(session_key):
-            return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
-        request.session[session_key] = choice.id
-        request.session.modified = True
+    with transaction.atomic():
+        if request.user.is_authenticated:
+            if Vote.objects.filter(poll=poll, user=request.user).exists():
+                return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
 
-    Choice.objects.filter(id=choice.id).update(votes=F('votes') + 1)
+            try:
+                Vote.objects.create(poll=poll, choice=choice, user=request.user)
+            except Exception:
+                return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
+        else:
+            session_key = f'voted_poll_{poll.id}'
+            if request.session.get(session_key):
+                return JsonResponse({'success': False, 'error': 'Bu ankete daha önce oy kullandınız.'}, status=400)
+            request.session[session_key] = choice.id
+            request.session.modified = True
+
+        Choice.objects.filter(id=choice.id).update(votes=F('votes') + 1)
 
     poll.refresh_from_db()
     choices = poll.choices.all()
@@ -188,7 +210,11 @@ def poll_toggle_active(request, poll_id):
     status_text = "oylamaya açıldı" if poll.is_active else "oylamaya kapatıldı"
     messages.success(request, f"Anket {status_text}.")
     next_url = request.POST.get('next')
-    if next_url:
+    if next_url and url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure()
+    ):
         return redirect(next_url)
     return redirect('polls:poll_detail', poll_id=poll.id)
 
@@ -203,7 +229,11 @@ def poll_delete(request, poll_id):
     poll.delete()
     messages.success(request, "Anket başarıyla silindi.")
     next_url = request.POST.get('next')
-    if next_url:
+    if next_url and url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure()
+    ):
         return redirect(next_url)
     return redirect('polls:feed')
 

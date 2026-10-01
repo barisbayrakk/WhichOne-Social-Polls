@@ -33,7 +33,7 @@ class RegisterForm(UserCreationForm):
             if 'class' not in field.widget.attrs:
                 field.widget.attrs['class'] = 'form-input'
             if field_name == 'password1':
-                field.widget.attrs['placeholder'] = 'En az 6 karakterli güçlü bir parola'
+                field.widget.attrs['placeholder'] = 'En az 8 karakterli güçlü bir parola'
             elif field_name == 'password2':
                 field.widget.attrs['placeholder'] = 'Parolanızı tekrar girin'
 

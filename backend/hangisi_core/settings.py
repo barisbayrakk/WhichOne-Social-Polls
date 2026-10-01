@@ -20,12 +20,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'hangisi-insecure-secret-key-change-in-prod
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't', 'yes')
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.getenv(
         'CSRF_TRUSTED_ORIGINS',
-        'https://*.vercel.app,http://127.0.0.1,http://localhost'
+        'http://127.0.0.1,http://localhost'
     ).split(',') if origin.strip()
 ]
 
@@ -101,7 +101,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {'min_length': 6},
+        'OPTIONS': {'min_length': 8},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -139,3 +139,16 @@ LOGIN_REDIRECT_URL = 'polls:feed'
 LOGOUT_REDIRECT_URL = 'polls:feed'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Production Security & SSL Settings
+if not DEBUG:
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1', 't', 'yes')
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() in ('true', '1', 't', 'yes')
+    CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').lower() in ('true', '1', 't', 'yes')
+    if SECURE_SSL_REDIRECT:
+        SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_PRELOAD = True
+
